@@ -1,18 +1,16 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 
-struct g_node{
+struct list_node{
     int info;
-    struct g_node *next;
+    struct list_node *next;
 };
 
-void push_element_end(struct g_node *head ,int new_element_value){
-    struct g_node *new_element = malloc(sizeof(struct g_node));
-    struct g_node *iterator = head;
-    struct g_node *last_element;
+void push_element_end( struct list_node *head, int new_element_value ){
+    struct list_node *new_element = malloc( sizeof( struct list_node ) );
+    struct list_node *iterator = head;
+    struct list_node *last_element;
 
-    while (iterator->next != NULL) {
+    while ( iterator->next != NULL ) {
         iterator = iterator->next;
     }
     last_element = iterator;
@@ -22,12 +20,12 @@ void push_element_end(struct g_node *head ,int new_element_value){
     new_element->next = NULL;
 }
 
-int pop_element_end(struct g_node *head){
-    struct g_node *poped_element;
-    struct g_node *iterator = head;
+int pop_element_end( struct list_node *head ){
+    struct list_node *poped_element;
+    struct list_node *iterator = head;
     int aux;
 
-    while (  iterator -> next -> next != NULL) {
+    while ( iterator->next->next != NULL) {
         iterator = iterator->next;
     }
 
@@ -40,77 +38,93 @@ int pop_element_end(struct g_node *head){
     return aux;
 }
 
-void print_list(struct g_node *head){
-    struct g_node *iterator = head;
+void print_list( struct list_node *head ){
+    struct list_node *iterator = head;
 
     while (iterator->next != NULL) {
-        printf("%d ", iterator->next->info);
+        if (iterator->next->next != NULL)
+            printf(" %d ->", iterator->next->info);
+        else
+            printf(" %d;", iterator->next->info);
         iterator = iterator->next;
     }
     printf("\n");
 }
 
-int return_no_elements(struct g_node *head){
+int return_no_elements( struct list_node *head ){
     int no_elements ;
-    struct g_node *iterator;
+    struct list_node *iterator;
     iterator = head;
     no_elements = 0;
 
-    while (iterator->next != NULL) {
+    while ( iterator->next != NULL ) {
         iterator = iterator->next;
         ++no_elements;
     }
     return no_elements;
 }
 
-void rosenstiehl(int n, int ma[6][6], int u, struct g_node *head, struct g_node *head2) {
-    int v;
-    push_element_end(head, u);
-    while (return_no_elements(head)) {
-        u = pop_element_end(head);
-        v = 0;
-        while (v < n) {
-            if (ma[u][v] == 1) {
-                ma[u][v] = 0;
-                ma[v][u] = 0;
-                push_element_end(head, u);
-                u = v;
-                v = 0;
+void rosenstiehl( int number_of_nodes, int **adjacency_matrix, int root, struct list_node *head, struct list_node *cycle_head ) {
+
+    int next_node;
+    push_element_end(head, root);
+    while ( return_no_elements(head) ) {
+        root = pop_element_end(head);
+        next_node = 0;
+        while ( next_node < number_of_nodes ) {
+            if ( adjacency_matrix[root][next_node] == 1) {
+                adjacency_matrix[root][next_node] = 0;
+                adjacency_matrix[next_node][root] = 0;
+                push_element_end(head, root);
+                root = next_node;
+                next_node = 0;
             }
-            else v++;
+            else next_node++;
         }
-        push_element_end(head2, u);
+        push_element_end(cycle_head, root);
     }
 }
 
-
 int main(){
-    struct g_node *head = malloc(sizeof(struct g_node));
+
+    struct list_node *head = malloc(sizeof(struct list_node));
     head->next = NULL;
-    struct g_node *head2 = malloc(sizeof(struct g_node));
-    head2->next = NULL;
+    struct list_node *cycle_head = malloc(sizeof(struct list_node));
+    cycle_head->next = NULL;
 
 
-    int aux, aux2;
-    int i, j;
-    int ma[6][6] = {0, 1, 1, 1, 1, 0,
-                    1, 0, 1, 1, 1, 0,
-                    1, 1, 0, 1, 0, 1,
-                    1, 1, 1, 0, 0, 1,
-                    1, 1, 0, 0, 0, 0,
-                    0, 0, 1, 1, 0, 0};
+    int iterator1,iterator2;
+    int **adjacency_matrix;
+    int is_edge;
+    int number_of_nodes;
 
-    for(i = 0; i < 6; i++){
-        for(j = 0; j < 6; j++){
-               printf("%5d ",ma[i][j]);
+    printf("Enter the number of nodes in the graph: ");
+    scanf("%d", &number_of_nodes);
+    printf("\nThe nodes IDs range from 0 to %d\n", number_of_nodes - 1);
+
+    adjacency_matrix = (int**)calloc( number_of_nodes, sizeof(int) );
+    for ( iterator1 = 0; iterator1 < number_of_nodes; iterator1++ )
+        adjacency_matrix[iterator1] = (int**)calloc( number_of_nodes, sizeof(int) );
+
+    for( iterator1 = 0; iterator1 < number_of_nodes; iterator1++){
+        for( iterator2 = 0; iterator2 < number_of_nodes; iterator2++ ){
+            scanf("%d", &is_edge);
+            if ( iterator1 == iterator2 )
+                adjacency_matrix[iterator1][iterator2] = 0;
+            else
+                adjacency_matrix[iterator1][iterator2] = is_edge;
         }
-        printf("\n");
+        printf("\n\n");
     }
-    rosenstiehl(6, ma, 0, head, head2);
-    print_list(head2);
+
+    int root = 0;
+    rosenstiehl(number_of_nodes, adjacency_matrix, root, head, cycle_head);
+    printf("\nThe eulerian cycle is: ");
+    print_list(cycle_head);
 
     free(head);
-    free(head2);
+    free(cycle_head);
+    free(adjacency_matrix);
 
     return 0;
 }
